@@ -1,2 +1,4 @@
 Flask==2.0.1
 kubernetes==18.20.0
+tabulate==0.8.9
+termcolor==1.1.0
