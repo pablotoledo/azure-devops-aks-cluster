@@ -1,13 +1,19 @@
 # azure-devops-aks-cluster
 
 
+# Agent pool
 
+```yaml
+pool:
+  name: MiAgentPool
+
+```
 
 # Scale Down
 
 ./run.sh --once
 
-```bash
+```yaml
 spec:
   replicas: 0
   template:

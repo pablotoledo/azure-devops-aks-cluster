@@ -4,7 +4,7 @@ import time
 import os
 
 # Configuración
-AZDO_PAT = os.environ.get('AZDO_PAT', 'default_value_if_not_provided') 
+ADO_PAT = os.environ.get('ADO_PAT', 'default_value_if_not_provided') 
 AZDO_URL = 'https://dev.azure.com/tu_organizacion/tu_proyecto/_apis/build/builds?api-version=6.0'
 POLLING_INTERVAL = 60  # En segundos
 MAX_REPLICAS = 10
@@ -50,7 +50,7 @@ def scale_down():
 
 while True:
     # Paso 1: Obtener datos de Azure DevOps
-    headers = {'Authorization': f'Basic {AZDO_PAT}'}
+    headers = {'Authorization': f'Basic {ADO_PAT}'}
     response = requests.get(AZDO_URL, headers=headers)
     build_data = response.json()
 
