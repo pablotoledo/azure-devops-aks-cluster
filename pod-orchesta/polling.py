@@ -8,8 +8,8 @@ from termcolor import colored
 
 # Configuración de Kubernetes
 MAX_REPLICAS = 10
-NAMESPACE = 'tu-namespace'
-DEPLOYMENT_NAME = 'nombre-de-tu-deployment'
+NAMESPACE = 'devops-k8s-ns'
+DEPLOYMENT_NAME = 'azdo-polling-deployment'
 #config.load_incluster_config()
 #v1 = client.AppsV1Api()
 
@@ -144,6 +144,8 @@ def scale_up():
 
 
 def scale_down():
+    # TODO: Implementar lógica de desescalamiento
+    # Puede no ser necesario y esta funcion puede ser reconvertida a un analisis de los pods en ejecucion
     current_replicas = get_current_replica_count()
     if current_replicas > 0:
         v1.patch_namespaced_deployment_scale(

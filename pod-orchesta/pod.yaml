@@ -1,8 +1,15 @@
-#kubectl create secret generic azdo-secret --from-literal=pat=TU_PERSONAL_ACCESS_TOKEN
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-k8s-ns
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: azdo-polling-deployment
+  namespace: devops-k8s-ns
   labels:
     app: azdo-polling
 spec:
@@ -17,10 +24,20 @@ spec:
     spec:
       containers:
       - name: azdo-polling-container
-        image: YOUR_DOCKER_IMAGE_PATH_HERE
+        image: YOUR_DOCKER_IMAGE_PATH_HERE #jtoledog/polling-ado-aks
         env:
-        - name: AZDO_PAT
+        - name: ADO_PAT
           valueFrom:
             secretKeyRef:
               name: azdo-secret
-              key: pat
+              key: ADO_PAT
+        - name: ADO_NAME
+          valueFrom:
+            secretKeyRef:
+              name: azdo-secret
+              key: ADO_NAME
+        - name: ADO_PROJECT
+          valueFrom:
+            secretKeyRef:
+              name: azdo-secret
+              key: ADO_PROJECT

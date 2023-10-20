@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY polling.py .
 
-CMD ["python", "polling.py"]
+CMD ["python", "-u", "polling.py"]
