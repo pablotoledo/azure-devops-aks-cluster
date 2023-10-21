@@ -76,6 +76,26 @@ def analyze_jobs(jobs_data):
 
     return running_jobs, queued_jobs, summary
 
+def remove_offline_agents(pool_id):
+    headers = {
+        "Authorization": f"Basic {base64.b64encode(bytes(':' + pat, 'utf-8')).decode('ascii')}"
+    }
+
+    # 1. Obtener una lista de todos los agentes en el pool
+    url = f"https://dev.azure.com/{organization_name}/_apis/distributedtask/pools/{pool_id}/agents"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    agents = response.json()["value"]
+
+    # 2. Filtrar aquellos agentes que estén offline
+    offline_agents = [agent for agent in agents if agent["status"] == "offline"]
+
+    # 3. Eliminar los agentes offline
+    for agent in offline_agents:
+        delete_url = f"https://dev.azure.com/{organization_name}/_apis/distributedtask/pools/{pool_id}/agents/{agent['id']}?api-version=6.0"
+        delete_response = requests.delete(delete_url, headers=headers)
+        delete_response.raise_for_status()
+        print(f"Removed offline agent: {agent['name']}")
 
 # Carga las variables de entorno
 organization_name = os.environ.get('ADO_NAME', 'default_value_if_not_provided')
@@ -103,5 +123,8 @@ running_jobs, queued_jobs, summary = analyze_jobs(running_jobs_data)
 print("Running Jobs:", running_jobs)
 print("Queued Jobs:", queued_jobs)
 print("Summary:", summary)
+
+# Eliminar agentes offline
+remove_offline_agents(pool_id)
 
 
