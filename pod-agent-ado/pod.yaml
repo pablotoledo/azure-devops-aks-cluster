@@ -1,0 +1,44 @@
+# pod-agent.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: ado-agent-
+  namespace: devops-k8s-ns
+  labels:
+    role: ado-agent
+spec:
+  containers:
+  - name: ado-agent-container
+    image: IMAGE_PATH_FOR_ADO_AGENT #jtoledog/agent-aks-base
+    env:
+    - name: ADO_URL
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_URL
+    - name: ADO_PAT
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_PAT
+    - name: ADO_AGENT_NAME
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_AGENT_NAME
+    - name: ADO_POOL
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_POOL
+    - name: ADO_NAME
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_NAME
+    - name: ADO_PROJECT
+      valueFrom:
+        secretKeyRef:
+          name: azdo-secret
+          key: ADO_PROJECT
+  restartPolicy: Never

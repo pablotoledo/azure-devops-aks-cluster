@@ -22,6 +22,7 @@ spec:
       labels:
         app: azdo-polling
     spec:
+      serviceAccountName: azdo-polling-sa
       containers:
       - name: azdo-polling-container
         image: YOUR_DOCKER_IMAGE_PATH_HERE #jtoledog/polling-ado-aks
