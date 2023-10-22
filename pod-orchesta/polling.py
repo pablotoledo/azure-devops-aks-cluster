@@ -10,8 +10,8 @@ from termcolor import colored
 MAX_REPLICAS = 10
 NAMESPACE = 'devops-k8s-ns'
 DEPLOYMENT_NAME = 'azdo-polling-deployment'
-#config.load_incluster_config()
-#v1 = client.AppsV1Api()
+config.load_incluster_config()
+v1 = client.AppsV1Api()
 
 # Configuración de Azure DevOps
 ADO_NAME = os.environ.get('ADO_NAME', 'default_value_if_not_provided')
@@ -131,6 +131,17 @@ def print_jobs_table(running_jobs, queued_jobs):
     headers = ["Request ID", "Job Name", "Repo Name", "Queue Time", "Status", "Agent"]
     print(tabulate(colored_rows, headers=headers, tablefmt='grid'))
 
+def create_k8s_job():
+    api_instance = client.BatchV1Api()
+    job = client.V1Job(
+        api_version="batch/v1",
+        kind="Job",
+        metadata=client.V1ObjectMeta(generate_name="ado-agent-"),
+        spec={
+            # ... (Tu especificación del Job aquí)
+        }
+    )
+    api_instance.create_namespaced_job(namespace=NAMESPACE, body=job)
 
 def scale_up():
     current_replicas = get_current_replica_count()
