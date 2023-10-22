@@ -157,12 +157,12 @@ def scale_down():
 
 
 while True:
-    # Paso 1: Obtener datos de Azure DevOps
+    # Paso 0: Obtener datos de Azure DevOps
     print("New ")
     pool_id = get_pool_id()
     running_jobs_data = get_running_jobs_for_pool(pool_id)
 
-    # Imprimimos
+    # Paso 1: Imprimimos
     running_jobs, queued_jobs, summary = analyze_jobs(running_jobs_data)
     
     # Paso 2: Analizar trabajos

@@ -23,9 +23,8 @@ spec:
           key: ADO_PAT
     - name: ADO_AGENT_NAME
       valueFrom:
-        secretKeyRef:
-          name: azdo-secret
-          key: ADO_AGENT_NAME
+        fieldRef:
+          fieldPath: metadata.name
     - name: ADO_POOL
       valueFrom:
         secretKeyRef:
