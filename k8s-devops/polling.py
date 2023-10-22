@@ -10,7 +10,7 @@ from termcolor import colored
 # Configuración de Kubernetes
 MAX_REPLICAS = 10
 NAMESPACE = 'devops-k8s-ns'
-DEPLOYMENT_NAME = 'azdo-polling-deployment'
+LABEL_SELECTOR = "role=ado-agent"
 config.load_incluster_config()
 v1 = client.AppsV1Api()
 
@@ -53,9 +53,10 @@ def analyze_jobs(jobs_data):
     return len(queued_jobs)
 
 
-def get_current_replica_count():
-    deployment = v1.read_namespaced_deployment(DEPLOYMENT_NAME, NAMESPACE)
-    return deployment.spec.replicas
+def get_current_job_count():
+    jobs = client.BatchV1Api().list_namespaced_job(NAMESPACE, label_selector=LABEL_SELECTOR)
+    running_jobs = [job for job in jobs.items if job.status.active]
+    return len(running_jobs)
 
 def analyze_jobs(jobs_data):
     # Lists to store job details
@@ -150,33 +151,41 @@ def create_k8s_job():
     )
     api_instance.create_namespaced_job(namespace=NAMESPACE, body=job)
 
-def scale_up():
-    current_replicas = get_current_replica_count()
-    if current_replicas < MAX_REPLICAS:
-        v1.patch_namespaced_deployment_scale(
-            DEPLOYMENT_NAME,
-            NAMESPACE,
-            {"spec": {"replicas": current_replicas + 1}}
-        )
-        print("Escalado hacia arriba.")
+def scale_horizontally(queued_jobs_count):
+    current_jobs = get_current_job_count()
+    jobs_to_create = min(queued_jobs_count, MAX_REPLICAS - current_jobs)
+    
+    for _ in range(jobs_to_create):
+        create_k8s_job()
+        print("Job creado.")
+    
+    if current_jobs + jobs_to_create >= MAX_REPLICAS:
+        print("Ya se ha alcanzado el máximo de replicas. No se crearán más jobs.")
+        
+def remove_offline_agents(pool_id):
+    headers = {
+        "Authorization": f"Basic {base64.b64encode(bytes(':' + ADO_PAT, 'utf-8')).decode('ascii')}"
+    }
 
+    # 1. Obtener una lista de todos los agentes en el pool
+    url = f"https://dev.azure.com/{ADO_NAME}/_apis/distributedtask/pools/{pool_id}/agents"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    agents = response.json()["value"]
 
-def scale_down():
-    # TODO: Implementar lógica de desescalamiento
-    # Puede no ser necesario y esta funcion puede ser reconvertida a un analisis de los pods en ejecucion
-    current_replicas = get_current_replica_count()
-    if current_replicas > 0:
-        v1.patch_namespaced_deployment_scale(
-            DEPLOYMENT_NAME,
-            NAMESPACE,
-            {"spec": {"replicas": current_replicas - 1}}
-        )
-        print("Escalado hacia abajo.")
+    # 2. Filtrar aquellos agentes que estén offline
+    offline_agents = [agent for agent in agents if agent["status"] == "offline" and agent["name"].startswith("ado-agent-")]
 
+    # 3. Eliminar los agentes offline
+    for agent in offline_agents:
+        delete_url = f"https://dev.azure.com/{ADO_NAME}/_apis/distributedtask/pools/{pool_id}/agents/{agent['id']}?api-version=6.0"
+        delete_response = requests.delete(delete_url, headers=headers)
+        if delete_response.status_code == 200:
+            print(f"Removed offline agent: {agent['name']}")
 
 while True:
     # Paso 0: Obtener datos de Azure DevOps
-    print("New ")
+    print("-----------------------------------------------------------------------------------------------------------------")
     pool_id = get_pool_id()
     running_jobs_data = get_running_jobs_for_pool(pool_id)
 
@@ -188,13 +197,13 @@ while True:
 
     # Paso 3: Lógica de decisión
     if queued_jobs_count > 0:
-        #scale_up()
-        print("Creando un job nuevo")
-        create_k8s_job()
-        
+        scale_horizontally(queued_jobs_count)
     else:
         #scale_down()
-        print("toca desescalar")
+        print("No hay acciones con nuevos Jobs a realizar.")
+    
+    # Paso 4: Eliminar agentes offline
+    remove_offline_agents(pool_id)
 
     # Esperar antes de la siguiente revisión
     time.sleep(POLLING_INTERVAL)
