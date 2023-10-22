@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: ado-agent-container
-        image: IMAGE_PATH_FOR_ADO_AGENT #jtoledog/agent-aks-base
+        image: jtoledog/agent-aks-base #IMAGE_PATH_FOR_ADO_AGENT
         env:
         - name: ADO_URL
           valueFrom:

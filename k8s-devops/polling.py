@@ -1,4 +1,5 @@
 import os
+import yaml
 import requests
 import base64
 from kubernetes import client, config
@@ -132,14 +133,20 @@ def print_jobs_table(running_jobs, queued_jobs):
     print(tabulate(colored_rows, headers=headers, tablefmt='grid'))
 
 def create_k8s_job():
+    def load_yaml_file(relative_path):
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        yaml_path = os.path.join(script_dir, relative_path)
+        
+        with open(yaml_path, 'r') as file:
+            return yaml.safe_load(file)
+        
     api_instance = client.BatchV1Api()
+    job_spec = load_yaml_file("pod-agent.yaml")
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
         metadata=client.V1ObjectMeta(generate_name="ado-agent-"),
-        spec={
-            # ... (Tu especificación del Job aquí)
-        }
+        spec=job_spec["spec"]
     )
     api_instance.create_namespaced_job(namespace=NAMESPACE, body=job)
 
@@ -182,7 +189,9 @@ while True:
     # Paso 3: Lógica de decisión
     if queued_jobs_count > 0:
         #scale_up()
-        print("toca escalar")
+        print("Creando un job nuevo")
+        create_k8s_job()
+        
     else:
         #scale_down()
         print("toca desescalar")

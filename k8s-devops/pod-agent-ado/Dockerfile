@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     tar \
     ca-certificates \
+    git \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
