@@ -1,7 +1,7 @@
 # Azure DevOps K8s Cluster Autoscaler
 
 <p align="center">
-  <img src="logo.png" alt="Logo Azure DevOps K8s Cluster Autoscaler">
+  <img src="logo.png" alt="Logo Azure DevOps K8s Cluster Autoscaler" width="50%">
 </p>
 
 This project provides a solution for automatically scaling Azure DevOps agents within a Kubernetes (AKS & EKS) cluster based on the queue of pending jobs in Azure DevOps. This project is using a "polling" aproach to check the queue of pending jobs in Azure DevOps and scale the agents accordingly and avoid the need of a webhook and a public endpoint.
