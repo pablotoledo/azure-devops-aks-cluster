@@ -7,18 +7,17 @@ import time
 from tabulate import tabulate
 from termcolor import colored
 
-# Configuración de Kubernetes
-MAX_REPLICAS = 10
+# K8s configuration
+MAX_REPLICAS = int(os.environ.get("MAX_REPLICAS", 5))
 NAMESPACE = 'devops-k8s-ns'
 LABEL_SELECTOR = "role=ado-agent"
 config.load_incluster_config()
 v1 = client.AppsV1Api()
 
-# Configuración de Azure DevOps
+# Azure DevOps configuration
 ADO_NAME = os.environ.get('ADO_NAME', 'default_value_if_not_provided')
-ADO_PROJECT = os.environ.get('ADO_PROJECT', 'default_value_if_not_provided')
 ADO_PAT = os.environ.get('ADO_PAT', 'default_value_if_not_provided')
-POOL_NAME = "k8s-cloud"
+POOL_NAME = os.environ.get('ADO_POOL', 'default_value_if_not_provided')
 POLLING_INTERVAL = 60  # En segundos
 
 
@@ -142,7 +141,7 @@ def create_k8s_job():
             return yaml.safe_load(file)
         
     api_instance = client.BatchV1Api()
-    job_spec = load_yaml_file("pod-agent.yaml")
+    job_spec = load_yaml_file("job-agent.yaml")
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
@@ -157,53 +156,52 @@ def scale_horizontally(queued_jobs_count):
     
     for _ in range(jobs_to_create):
         create_k8s_job()
-        print("Job creado.")
-    
+        print("Creating a new job...")
     if current_jobs + jobs_to_create >= MAX_REPLICAS:
-        print("Ya se ha alcanzado el máximo de replicas. No se crearán más jobs.")
+        print("No more jobs will be created. The maximum number of replicas has been reached.")
+        print(f"Current jobs: {current_jobs} - Queued jobs: {queued_jobs_count} - Max replicas: {MAX_REPLICAS}")
         
 def remove_offline_agents(pool_id):
     headers = {
         "Authorization": f"Basic {base64.b64encode(bytes(':' + ADO_PAT, 'utf-8')).decode('ascii')}"
     }
 
-    # 1. Obtener una lista de todos los agentes en el pool
+    # 1. Get a list of all agents in the pool
     url = f"https://dev.azure.com/{ADO_NAME}/_apis/distributedtask/pools/{pool_id}/agents"
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     agents = response.json()["value"]
 
-    # 2. Filtrar aquellos agentes que estén offline
+    # 2. Filter those agents that are offline
     offline_agents = [agent for agent in agents if agent["status"] == "offline" and agent["name"].startswith("ado-agent-")]
 
-    # 3. Eliminar los agentes offline
+    # 3. Remove offline agents
     for agent in offline_agents:
         delete_url = f"https://dev.azure.com/{ADO_NAME}/_apis/distributedtask/pools/{pool_id}/agents/{agent['id']}?api-version=6.0"
         delete_response = requests.delete(delete_url, headers=headers)
-        if delete_response.status_code == 200:
-            print(f"Removed offline agent: {agent['name']}")
+        print(f"Removing offline agent: {agent['name']} - Response Status:({delete_response.status_code})")
 
 while True:
-    # Paso 0: Obtener datos de Azure DevOps
     print("-----------------------------------------------------------------------------------------------------------------")
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    # Step 0: Get info from Azure DevOps
     pool_id = get_pool_id()
     running_jobs_data = get_running_jobs_for_pool(pool_id)
 
-    # Paso 1: Imprimimos
+    # Step 1: Print the jobs
     running_jobs, queued_jobs, summary = analyze_jobs(running_jobs_data)
     
-    # Paso 2: Analizar trabajos
+    # Step 2: Analyze the jobs
     queued_jobs_count = len(queued_jobs)
 
-    # Paso 3: Lógica de decisión
+    # Step 3: Decision logic
     if queued_jobs_count > 0:
         scale_horizontally(queued_jobs_count)
     else:
-        #scale_down()
-        print("No hay acciones con nuevos Jobs a realizar.")
+        print("The queue is empty. No action required.")
     
-    # Paso 4: Eliminar agentes offline
+    # Step 4: Remove offline agents
     remove_offline_agents(pool_id)
 
-    # Esperar antes de la siguiente revisión
+    # Wait before the next polling
     time.sleep(POLLING_INTERVAL)

@@ -41,10 +41,5 @@ spec:
             secretKeyRef:
               name: azdo-secret
               key: ADO_NAME
-        - name: ADO_PROJECT
-          valueFrom:
-            secretKeyRef:
-              name: azdo-secret
-              key: ADO_PROJECT
       restartPolicy: Never
   backoffLimit: 0

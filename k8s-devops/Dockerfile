@@ -6,6 +6,6 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY polling.py .
-COPY pod-agent-ado/pod.yaml pod-agent.yaml
+COPY job-agent-ado/job.yaml job-agent.yaml
 
 CMD ["python", "-u", "polling.py"]

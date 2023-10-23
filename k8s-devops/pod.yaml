@@ -37,8 +37,13 @@ spec:
             secretKeyRef:
               name: azdo-secret
               key: ADO_NAME
-        - name: ADO_PROJECT
+        - name: ADO_MAX_SELF_HOSTED_AGENTS
           valueFrom:
             secretKeyRef:
               name: azdo-secret
-              key: ADO_PROJECT
+              key: ADO_MAX_SELF_HOSTED_AGENTS
+        - name: ADO_POOL
+          valueFrom:
+            secretKeyRef:
+              name: azdo-secret
+              key: ADO_POOL
