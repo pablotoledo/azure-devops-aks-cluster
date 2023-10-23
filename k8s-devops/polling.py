@@ -161,6 +161,28 @@ def scale_horizontally(queued_jobs_count):
         print("No more jobs will be created. The maximum number of replicas has been reached.")
         print(f"Current jobs: {current_jobs} - Queued jobs: {queued_jobs_count} - Max replicas: {MAX_REPLICAS}")
         
+def remove_completed_jobs():
+    batch_v1 = client.BatchV1Api()
+    completed_jobs = batch_v1.list_namespaced_job(
+        namespace=NAMESPACE, 
+        label_selector=LABEL_SELECTOR
+    )
+    
+    for job in completed_jobs.items:
+        if job.status.succeeded == 1 or job.status.failed:
+            try:
+                print(f"Deleting job {job.metadata.name} in namespace {NAMESPACE}...")
+                batch_v1.delete_namespaced_job(
+                    name=job.metadata.name, 
+                    namespace=NAMESPACE,
+                    body=client.V1DeleteOptions(
+                        propagation_policy="Foreground",
+                        grace_period_seconds=5
+                    )
+                )
+            except Exception as e:
+                print(f"Error deleting job {job.metadata.name} in namespace {NAMESPACE}: {str(e)}")
+        
 def remove_offline_agents(pool_id):
     headers = {
         "Authorization": f"Basic {base64.b64encode(bytes(':' + ADO_PAT, 'utf-8')).decode('ascii')}"
@@ -200,8 +222,9 @@ while True:
     else:
         print("The queue is empty. No action required.")
     
-    # Step 4: Remove offline agents
+    # Step 4: Remove offline agents and completed jobs
     remove_offline_agents(pool_id)
+    remove_completed_jobs()
 
     # Wait before the next polling
     time.sleep(POLLING_INTERVAL)
