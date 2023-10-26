@@ -54,7 +54,7 @@ def analyze_jobs(jobs_data):
 
 def get_current_job_count():
     jobs = client.BatchV1Api().list_namespaced_job(NAMESPACE, label_selector=LABEL_SELECTOR)
-    running_jobs = [job for job in jobs.items if job.status.active]
+    running_jobs = [job for job in jobs.items if job.status.active or job.status.conditions[0].type == "PodScheduled"]
     return len(running_jobs)
 
 def analyze_jobs(jobs_data):
