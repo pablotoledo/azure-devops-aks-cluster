@@ -8,7 +8,7 @@ from tabulate import tabulate
 from termcolor import colored
 
 # K8s configuration
-MAX_REPLICAS = int(os.environ.get("MAX_REPLICAS", 5))
+MAX_REPLICAS = int(os.environ.get("ADO_MAX_SELF_HOSTED_AGENTS", 5))
 NAMESPACE = 'devops-k8s-ns'
 LABEL_SELECTOR = "role=ado-agent"
 config.load_incluster_config()
