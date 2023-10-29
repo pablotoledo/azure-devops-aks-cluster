@@ -53,9 +53,20 @@ def analyze_jobs(jobs_data):
 
 
 def get_current_job_count():
-    jobs = client.BatchV1Api().list_namespaced_job(NAMESPACE, label_selector=LABEL_SELECTOR)
-    running_jobs = [job for job in jobs.items if job.status.active or job.status.conditions[0].type == "PodScheduled"]
-    return len(running_jobs)
+    batch_v1_api = client.BatchV1Api()
+    jobs = batch_v1_api.list_namespaced_job(NAMESPACE, label_selector=LABEL_SELECTOR)
+    active_or_pending_jobs = 0
+
+    for job in jobs.items:
+        if job.status.active:
+            active_or_pending_jobs += 1
+        elif job.status.conditions:
+            for condition in job.status.conditions:
+                if condition.type == "Pending":
+                    active_or_pending_jobs += 1
+                    break
+
+    return active_or_pending_jobs
 
 def analyze_jobs(jobs_data):
     # Lists to store job details
